@@ -6,12 +6,12 @@ const morgan = require('morgan');
 // running locally. On Gomix, .env files
 // are automatically loaded.
 require('dotenv').config();
-
+const {ALERT_FROM_EMAIL, ALERT_FROM_NAME, ALERT_TO_EMAIL} = process.env;
 const {logger} = require('./utilities/logger');
 // these are custom errors we've created
 const {FooError, BarError, BizzError} = require('./errors');
 
-const{sendEmail, mailOptions} = require('./emailer');
+const{sendEmail} = require('./emailer');
 
 const app = express();
 
@@ -32,17 +32,34 @@ app.get('*', russianRoulette);
 // YOUR MIDDLEWARE FUNCTION should be activated here using
 // `app.use()`. It needs to come BEFORE the `app.use` call
 // below, which sends a 500 and error message to the client
-app.use((err, req, res, next)=> {
-  if(err.type === "FooError"|| err.type === "BarError") {
-    console.log("inside if");
-    mailOptions.html = `<p>${err.message} ${err.stack}</p>`;
-    mailOptions.subject = `ALERT: a ${err.type} occurred`
+function sendEmailAlert(err, req, res, next){
+  if(err.type === "FooError" || err.type === "BarError") {
+    const mailOptions = {
+       from: "SERVICE ALERTS",
+       to: process.env.ALERT_TO_EMAIL,
+       subject: "`ALERT: a ${err.type} occurred`",
+       text: "",
+       html: `<p>${err.message} ${err.stack}</p>`
+      }
     sendEmail(mailOptions);
   }
-
   next(err);
-});
-
+}
+app.use(sendEmailAlert);
+// function sendEmailAlerts(err,req,res,next) {
+//   if (err instanceof FooError || err instanceof BarError) {
+//     logger.info(`I just sent an email detailing the error to ${ALERT_TO_EMAIL}`);
+//     const emailInfo = {
+//       from: ALERT_FROM_EMAIL,
+//       to: ALERT_TO_EMAIL,
+//       subject: `I found some errors. Here it is: ${err.name}`,
+//       text: `Here's what happened: ${err.stack}`
+//     };
+//   sendEmail(emailInfo);
+//   }
+//   next();
+// }
+// app.use(sendEmailAlerts);
 
 app.use((err, req, res, next) => {
   logger.error(err);
