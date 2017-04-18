@@ -39,7 +39,7 @@ app.use((err, req, res, next)=> {
     mailOptions.subject = `ALERT: a ${err.type} occurred`
     sendEmail(mailOptions);
   }
-  
+
   next(err);
 });
 
